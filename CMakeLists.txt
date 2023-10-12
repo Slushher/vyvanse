@@ -9,4 +9,4 @@ add_executable(vyvanse ${SOURCES})
 
 target_include_directories(vyvanse PUBLIC headers)
 include_directories("lib/glad/include")
-target_link_libraries(vyvanse -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl)
+target_link_libraries(vyvanse -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -g)
