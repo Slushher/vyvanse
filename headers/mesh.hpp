@@ -23,7 +23,8 @@ void setupMesh();
 public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<Texture> texture;
+    std::vector<Texture> textures;
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    static std::vector<Vertex> loadVertices(const float* vertices, size_t numVertices);
     void Draw(Shader &shader);
 };

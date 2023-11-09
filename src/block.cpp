@@ -1,11 +1,5 @@
 #include <block.hpp>
 
-Block::Block()
-{
-}
-Block::~Block()
-{
-}
 bool Block::isVisible()
 {
     return this->m_visible;
@@ -13,4 +7,10 @@ bool Block::isVisible()
 void Block::setVisible(bool visible)
 {
     this->m_visible=visible;
+}
+void Block::setBlockType(BlockType block_type){
+    this->block_type = block_type;
+}
+BlockType Block::getBlockType(){
+    return this->block_type;
 }
