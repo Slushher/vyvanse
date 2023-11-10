@@ -6,6 +6,9 @@ cmake:
 compile:
 	cmake --build cmake
 
+multi:
+	$(MAKE) compile -j 16
+
 run:
 	./bin/vyvanse
 

@@ -1,7 +1,7 @@
 #include <camera.hpp>
 
 // Camera variables
-glm::vec3 cameraPos = glm::vec3(8.0f, 16.0f, 8.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 16.0f, 0.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 direction;
@@ -9,7 +9,7 @@ float yaw = -90.0f;
 float pitch = 0.f;
 float lastX = 400, lastY = 300;
 int chunkLast_x, chunkLast_z = 0;
-float fov = 45.0f;
+float fov = 90.0f;
 bool firstMouse = true;
 
 bool SCREEN_LOCK = false;

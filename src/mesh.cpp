@@ -68,7 +68,7 @@ void Mesh::Draw(Shader &shader)
         shader.setInt((name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
-
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // Draw mesh
     glBindVertexArray(VAO);
     //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

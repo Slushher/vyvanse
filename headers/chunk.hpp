@@ -9,10 +9,10 @@ class Chunk
 {
     Block ***m_pBlocks;
     std::vector<Texture> m_pTextures;
-    std::vector<glm::vec3> meshCoords;
     std::vector<Mesh> meshes;
 public:
     static const int CHUNK_SIZE = 16;
+    static const int CHUNK_HEIGHT = 64;
     Chunk(int x, int z);
     ~Chunk();
     bool isBlockSurrounded(int x, int y, int z);
