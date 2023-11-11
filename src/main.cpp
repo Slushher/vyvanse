@@ -11,6 +11,7 @@
 #include <iostream>
 #include <chunk.hpp>
 #include <chunkmanager.hpp>
+#include <thread>
 
 // Definitions
 const float SCR_WIDTH = 1280.f;
@@ -19,12 +20,37 @@ const float SCR_HEIGHT = 720.f;
 // Debugging
 int success;
 char infoLog[512];
-bool isDebugged = true;
+bool isDebugged = false;
 
 // Lighting
 glm::vec3 lightPos(0.f, 6.0f, 0.f);
 
 int chunkX = 0, chunkZ = 0;
+
+int image_load(const char image_path[]){
+    unsigned int texture;
+    int image_w, image_h, image_channels;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Image handling
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *data = stbi_load(image_path, &image_w, &image_h, &image_channels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_w, image_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "ERROR::TEXTURE::LOADING_FAILED\n";
+    }
+    stbi_image_free(data);
+    return texture;
+}
 
 int main()
 {
@@ -58,28 +84,17 @@ int main()
     printf("Version GLSL: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     // Build and compile shader programs
-    Shader shader("shaders/1.vs", "shaders/1.fs");
+    Shader shader("shaders/2.vs", "shaders/2.fs");
+    Shader water("shaders/water/water.vs", "shaders/water/water.fs");
     // Vertex data
-    unsigned int VAO, VBO;
+    /*unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-
-    // Texture attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Normal attribute
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(5 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
+    */
     // Light VAO
     unsigned int lightVAO;
     glGenVertexArrays(1, &lightVAO);
@@ -88,15 +103,18 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    unsigned int texture, texture1;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    unsigned int brick, grass;
+    int image_w, image_h, image_channels;
+    brick = image_load("img/brick.png");
+    grass = image_load("img/grass.png");
+    /*
+    glGenTextures(1, &brick);
+    glBindTexture(GL_TEXTURE_2D, brick);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Image handling
-    int image_w, image_h, image_channels;
     stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load("img/brick.png", &image_w, &image_h, &image_channels, 0);
     if (data)
@@ -109,15 +127,17 @@ int main()
         std::cout << "ERROR::TEXTURE::LOADING_FAILED\n";
     }
     stbi_image_free(data);
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    
+
+    glGenTextures(1, &grass);
+    glBindTexture(GL_TEXTURE_2D, grass);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Image handling
     stbi_set_flip_vertically_on_load(true);
-    data = stbi_load("img/grass.png", &image_w, &image_h, &image_channels, 0);
+    unsigned char *data = stbi_load("img/grass.png", &image_w, &image_h, &image_channels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_w, image_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -128,10 +148,8 @@ int main()
         std::cout << "ERROR::TEXTURE::LOADING_FAILED\n";
     }
     stbi_image_free(data);
-    //shader.use();
-    shader.setInt("texture", 0);
-    // or set it via the texture class
-    shader.setInt("texture1", 1);
+    */
+
     ChunkManager chunkmanager;
     chunkmanager.UpdateLoadList(chunkX, chunkZ);
     chunkmanager.UpdateVisibilityList(chunkX, chunkZ);
@@ -147,10 +165,6 @@ int main()
         glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        // bind textures
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-
         // draw
         shader.use();
         shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
@@ -168,16 +182,10 @@ int main()
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
-        glBindVertexArray(VAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture1);
         // chunk logic
         if(chunkX!=static_cast<int>(cameraPos.x)/16 || chunkZ!=static_cast<int>(cameraPos.z)/16){
             chunkX = static_cast<int>(cameraPos.x)/16;
             chunkZ = static_cast<int>(cameraPos.z)/16;
-            std::cout<<"CHUNK CHANGED "<<chunkX<<" : "<<chunkZ<<"\n";
             chunkmanager.UpdateLoadList(chunkX, chunkZ);
             chunkmanager.UpdateUnloadList(chunkX, chunkZ);
             chunkmanager.UpdateRebuildList();
@@ -189,8 +197,8 @@ int main()
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    //glDeleteVertexArrays(1, &VAO);
+    //glDeleteBuffers(1, &VBO);
     glfwTerminate();
     return 0;
 }

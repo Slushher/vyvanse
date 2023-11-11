@@ -71,8 +71,8 @@ void Mesh::Draw(Shader &shader)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // Draw mesh
     glBindVertexArray(VAO);
-    //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-    glDrawArrays(GL_TRIANGLES, 0, indices.size());
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    //glDrawArrays(GL_TRIANGLES, 0, indices.size());
     glBindVertexArray(0);
 
     // Reset texture units to default

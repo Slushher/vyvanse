@@ -10,6 +10,7 @@ class ChunkManager{
     std::vector<Chunk*> visibleChunks;
 public:
     const int RENDER_DISTANCE = 4;
+    const int PRELOAD_DISTANCE = 1;
     void UpdateLoadList(int playerX, int playerZ);
     void UpdateRebuildList();
     void UpdateUnloadList(int playerX, int playerZ);

@@ -6,27 +6,29 @@ Chunk::Chunk(int x, int z)
 {
     const siv::PerlinNoise::seed_type seed = 123456u;
     const siv::PerlinNoise perlin{seed};
+    double perlin_multiplier = 0.02;
     this->chunkX = x;
     this->chunkZ = z;
     this->chunkVisible = true;
     m_pBlocks = new Block **[CHUNK_SIZE];
     for (int i = 0; i < CHUNK_SIZE; i++)
     {
-        m_pBlocks[i] = new Block *[CHUNK_SIZE];
-        for (int j = 0; j < CHUNK_SIZE; j++) // used to be j
+        m_pBlocks[i] = new Block *[CHUNK_HEIGHT];
+        for (int j = 0; j < CHUNK_HEIGHT; j++) // used to be j
         {
             m_pBlocks[i][j] = new Block[CHUNK_SIZE];
             for (int k = 0; k < CHUNK_SIZE; k++) // used to be k
             {
-                const double noise = perlin.octave2D_01((chunkX * 16 + i) * 0.05, (chunkZ * 16 + k) * 0.05, 2);
-                if (noise >= static_cast<double>(j) / CHUNK_SIZE)
+                const double noise = perlin.octave2D_01((chunkX * 16 + i) * perlin_multiplier, (chunkZ * 16 + k) * perlin_multiplier, 2);
+                if (noise >= static_cast<double>(j) / CHUNK_HEIGHT)
                 {
-                    if (j < CHUNK_SIZE/2)
+                    if (j < CHUNK_HEIGHT/2)
                     {
                         m_pBlocks[i][j][k].setBlockType(Brick);
                     }
                     else
                     {
+                        //printf("Grass at [%i %i %i]\n",i,j,k);
                         m_pBlocks[i][j][k].setBlockType(Grass);
                     }
                 }
@@ -37,8 +39,8 @@ Chunk::Chunk(int x, int z)
             }
         }
     }
-    m_pTextures.push_back({1, "Brick"});
-    m_pTextures.push_back({2, "Grass"});
+    m_pTextures.push_back({1, "brick"});
+    m_pTextures.push_back({2, "grass"});
 }
 Chunk::~Chunk()
 {
@@ -73,7 +75,7 @@ bool Chunk::isBlockSurrounded(int x, int y, int z)
 
                 // Check if the neighboring block is within chunk bounds
                 if (nx >= 0 && nx < CHUNK_SIZE &&
-                    ny >= 0 && ny < CHUNK_SIZE &&
+                    ny >= 0 && ny < CHUNK_HEIGHT &&
                     nz >= 0 && nz < CHUNK_SIZE)
                 {
                     // Check if the neighboring block is empty or not obstructing
@@ -95,7 +97,7 @@ void Chunk::Update()
 {
     for (int x = 0; x < CHUNK_SIZE; x++)
     {
-        for (int y = 0; y < CHUNK_SIZE; y++)
+        for (int y = 0; y < CHUNK_HEIGHT; y++)
         {
             for (int z = 0; z < CHUNK_SIZE; z++)
             {
@@ -120,13 +122,14 @@ void Chunk::Render(Shader &shader)
 
         // Calculate translation for each cube based on its position in the chunk
         int x = i % CHUNK_SIZE;
-        int y = (i / CHUNK_SIZE) % CHUNK_SIZE;
+        int y = (i / CHUNK_HEIGHT) % CHUNK_HEIGHT;
         int z = (i / (CHUNK_SIZE * CHUNK_SIZE)) % CHUNK_SIZE;
 
         glm::vec3 blockTranslate = glm::vec3(x + chunkX * CHUNK_SIZE, y, z + chunkZ * CHUNK_SIZE);
         model = glm::translate(model, blockTranslate);
 
         shader.setMat4("model", model);
+        shader.setInt("texture1", i);
         meshes[i].Draw(shader);
     }
 }
@@ -134,18 +137,20 @@ void Chunk::Render(Shader &shader)
 void Chunk::createMesh()
 {
     meshes.clear();
-    for (int i = 1; i <= Grass; i++)
+    std::vector<Vertex> p_blockMesh_vertices;
+    std::vector<unsigned int> cubeIndices;
+    for (int block_type = 1; block_type <= Grass; block_type++)
     {
-        std::vector<Vertex> p_blockMesh_vertices;
-        std::vector<unsigned int> cubeIndices;
+        p_blockMesh_vertices.clear();
+        cubeIndices.clear();
         // Calculate the starting position of the chunk in the world coordinates
         for (int x = 0; x < CHUNK_SIZE; x++)
         {
-            for (int y = 0; y < CHUNK_SIZE; y++)
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
                 for (int z = 0; z < CHUNK_SIZE; z++)
                 {
-                    if (m_pBlocks[x][y][z].getBlockType() == i)
+                    if (m_pBlocks[x][y][z].getBlockType() == block_type)
                     {
                         //std::cout<<"Block type : "<<m_pBlocks[x][y][z].getBlockType()<<"\n";
                         // Calculate the translation for the current block within the chunk
@@ -157,7 +162,6 @@ void Chunk::createMesh()
                             Vertex vertex;
                             vertex.Position = glm::vec3(cubeVertices[i * 8], cubeVertices[i * 8 + 1], cubeVertices[i * 8 + 2]) + blockTranslate;
                             vertex.Normal = glm::vec3(cubeVertices[i * 8 + 3], cubeVertices[i * 8 + 4], cubeVertices[i * 8 + 5]);
-                            // vertex.TexCoords = glm::vec2(cubeVertices[i * 8 + 6], cubeVertices[i * 8 + 7]);
                             //std::cout << m_pBlocks[x][y][z].getBlockType() << "\n";
                             vertex.TexCoords = glm::vec2(cubeVertices[i * 8 + 6], cubeVertices[i * 8 + 7]);
                             p_blockMesh_vertices.push_back(vertex);
@@ -168,6 +172,7 @@ void Chunk::createMesh()
                         {
                             cubeIndices.push_back(i + p_blockMesh_vertices.size() - 36);
                         }
+                        
                     }
                 }
             }

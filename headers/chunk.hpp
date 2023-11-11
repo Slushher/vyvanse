@@ -12,7 +12,7 @@ class Chunk
     std::vector<Mesh> meshes;
 public:
     static const int CHUNK_SIZE = 16;
-    static const int CHUNK_HEIGHT = 64;
+    static const int CHUNK_HEIGHT = 32;
     Chunk(int x, int z);
     ~Chunk();
     bool isBlockSurrounded(int x, int y, int z);
