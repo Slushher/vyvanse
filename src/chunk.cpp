@@ -4,9 +4,9 @@
 
 Chunk::Chunk(int x, int z)
 {
-    const siv::PerlinNoise::seed_type seed = 123456u;
+    const siv::PerlinNoise::seed_type seed = 1234u;
     const siv::PerlinNoise perlin{seed};
-    double perlin_multiplier = 0.02;
+    double perlin_multiplier = 0.05;
     this->chunkX = x;
     this->chunkZ = z;
     this->chunkVisible = true;
@@ -22,25 +22,33 @@ Chunk::Chunk(int x, int z)
                 const double noise = perlin.octave2D_01((chunkX * 16 + i) * perlin_multiplier, (chunkZ * 16 + k) * perlin_multiplier, 2);
                 if (noise >= static_cast<double>(j) / CHUNK_HEIGHT)
                 {
-                    if (j < CHUNK_HEIGHT/2)
+                    if (j < CHUNK_HEIGHT / 2)
                     {
                         m_pBlocks[i][j][k].setBlockType(Brick);
                     }
                     else
                     {
-                        //printf("Grass at [%i %i %i]\n",i,j,k);
+                        // printf("Grass at [%i %i %i]\n",i,j,k);
                         m_pBlocks[i][j][k].setBlockType(Grass);
                     }
                 }
                 else
                 {
-                    m_pBlocks[i][j][k].setBlockType(Air);
+                    if (j > 12)
+                    {
+                        m_pBlocks[i][j][k].setBlockType(Air);
+                    }
+                    else
+                    {
+                        m_pBlocks[i][j][k].setBlockType(Water);
+                    }
                 }
             }
         }
     }
     m_pTextures.push_back({1, "brick"});
     m_pTextures.push_back({2, "grass"});
+    m_pTextures.push_back({3, "water"});
 }
 Chunk::~Chunk()
 {
@@ -115,7 +123,7 @@ void Chunk::Update()
 }
 void Chunk::Render(Shader &shader)
 {
-    for (int i = 0; i < meshes.size(); i++)
+    for (int i = 0; i < 2; i++) // i < meshes.size()
     {
         shader.use();
         glm::mat4 model = glm::mat4(1.0f);
@@ -130,8 +138,90 @@ void Chunk::Render(Shader &shader)
 
         shader.setMat4("model", model);
         shader.setInt("texture1", i);
+        shader.setFloat("transparency", 1.0f);
         meshes[i].Draw(shader);
+        glDisable(GL_BLEND);
     }
+}
+
+void Chunk::RenderTransparent(Shader &shader)
+{
+    for (int i = 2; i < meshes.size(); i++)
+    {
+        shader.use();
+        glm::mat4 model = glm::mat4(1.0f);
+
+        // Calculate translation for each cube based on its position in the chunk
+        int x = i % CHUNK_SIZE;
+        int y = (i / CHUNK_HEIGHT) % CHUNK_HEIGHT;
+        int z = (i / (CHUNK_SIZE * CHUNK_SIZE)) % CHUNK_SIZE;
+
+        glm::vec3 blockTranslate = glm::vec3(x + chunkX * CHUNK_SIZE, y, z + chunkZ * CHUNK_SIZE);
+        model = glm::translate(model, blockTranslate);
+
+        shader.setMat4("model", model);
+        shader.setInt("texture1", i);
+        // printf("Now drawing water\n");
+        shader.setFloat("transparency", 0.3f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        meshes[i].Draw(shader);
+        glDisable(GL_BLEND);
+    }
+}
+
+void Chunk::RenderEdges(Shader &shader)
+{
+    shader.use();
+    glm::mat4 model = glm::mat4(1.0f);
+
+    // Calculate translation for each cube based on its position in the chunk
+    int x = 0; // Choose a specific edge, e.g., the front edge
+    int y = 0;
+    int z = 0;
+
+    glm::vec3 blockTranslate = glm::vec3(x + chunkX * CHUNK_SIZE, y, z + chunkZ * CHUNK_SIZE);
+    model = glm::translate(model, blockTranslate);
+
+    shader.setMat4("model", model);
+    shader.setVec3("lineColor", glm::vec3(1.0f, 0.0f, 0.0f)); // Red color
+
+    // Set the line width to 3 pixels
+    glLineWidth(6.0f);
+
+    // Create a VAO and VBO for the line
+    GLuint VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    // Vertices for the line
+    float lineVertices[] = {
+        chunkX * CHUNK_SIZE + x, 0.0f, chunkZ * CHUNK_SIZE + z,
+        chunkX * CHUNK_SIZE + x, CHUNK_HEIGHT, chunkZ * CHUNK_SIZE + z};
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), lineVertices, GL_STATIC_DRAW);
+
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // Draw the line
+    glDrawArrays(GL_LINES, 0, 2);
+
+    // Clean up
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+
+    // Reset line width
+    glLineWidth(1.0f);
+    // Reset color to white
+    shader.setVec3("lineColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+    // Reset other OpenGL states
+    glBindVertexArray(0);
 }
 
 void Chunk::createMesh()
@@ -139,7 +229,7 @@ void Chunk::createMesh()
     meshes.clear();
     std::vector<Vertex> p_blockMesh_vertices;
     std::vector<unsigned int> cubeIndices;
-    for (int block_type = 1; block_type <= Grass; block_type++)
+    for (int block_type = 1; block_type <= Water; block_type++)
     {
         p_blockMesh_vertices.clear();
         cubeIndices.clear();
@@ -152,7 +242,6 @@ void Chunk::createMesh()
                 {
                     if (m_pBlocks[x][y][z].getBlockType() == block_type)
                     {
-                        //std::cout<<"Block type : "<<m_pBlocks[x][y][z].getBlockType()<<"\n";
                         // Calculate the translation for the current block within the chunk
                         glm::vec3 blockTranslate = glm::vec3(x, y, z);
 
@@ -162,17 +251,14 @@ void Chunk::createMesh()
                             Vertex vertex;
                             vertex.Position = glm::vec3(cubeVertices[i * 8], cubeVertices[i * 8 + 1], cubeVertices[i * 8 + 2]) + blockTranslate;
                             vertex.Normal = glm::vec3(cubeVertices[i * 8 + 3], cubeVertices[i * 8 + 4], cubeVertices[i * 8 + 5]);
-                            //std::cout << m_pBlocks[x][y][z].getBlockType() << "\n";
                             vertex.TexCoords = glm::vec2(cubeVertices[i * 8 + 6], cubeVertices[i * 8 + 7]);
                             p_blockMesh_vertices.push_back(vertex);
                         }
-
                         // Adjust indices for the current block
                         for (size_t i = 0; i < 36; ++i)
                         {
                             cubeIndices.push_back(i + p_blockMesh_vertices.size() - 36);
                         }
-                        
                     }
                 }
             }
@@ -181,6 +267,7 @@ void Chunk::createMesh()
         Mesh mesh(p_blockMesh_vertices, cubeIndices, m_pTextures);
         meshes.push_back(mesh);
     }
+    // printf("Meshes built %i\n", meshes.size());
     bool rebuild = true;
 }
 

@@ -16,6 +16,7 @@ public:
     void UpdateUnloadList(int playerX, int playerZ);
     void UpdateVisibilityList(int playerX, int playerZ);
     bool isChunkOutOfRenderDistance(int chunkX, int chunkY, int playerX, int playerY);
-    void renderChunks(Shader &shader);
+    void renderChunks(Shader &shader); // Shader &shader
+    void renderEdges(Shader &shader);
     void RebuildChunks();
 };

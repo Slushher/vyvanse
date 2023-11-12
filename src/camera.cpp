@@ -13,7 +13,7 @@ float fov = 90.0f;
 bool firstMouse = true;
 
 bool SCREEN_LOCK = false;
-const float cameraSpeed = 0.5;
+float cameraSpeed = 0.5;
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 {
@@ -41,7 +41,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     if (pitch < -89.0f)
         pitch = -89.0f;
 
-    glm::vec3 direction;
+    //glm::vec3 direction;
     direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -50,11 +50,16 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    fov -= (float)yoffset;
+    /*fov -= (float)yoffset;
     if (fov < 1.0f)
         fov = 1.0f;
     if (fov > 45.0f)
-        fov = 45.0f;
+        fov = 45.0f;*/
+    cameraSpeed -= (float)yoffset/10.f;
+    if (cameraSpeed < 0.1f)
+        cameraSpeed = 0.1f;
+    if (cameraSpeed > 1.0f)
+        cameraSpeed = 1.0f;
 }
 
 void processInput(GLFWwindow *window)

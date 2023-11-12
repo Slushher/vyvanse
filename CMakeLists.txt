@@ -4,9 +4,9 @@ project(VYVANSE VERSION 1.0.0)
 
 add_compile_options(-g)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../bin/")
-file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_SOURCE_DIR} "src/*.cpp" "lib/glad/glad.*")
+file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_SOURCE_DIR} "src/*.cpp" "lib/glad/glad.*" "lib/imgui/imgui*.*")
 add_executable(vyvanse ${SOURCES})
 
 target_include_directories(vyvanse PUBLIC headers)
-include_directories("lib/glad/include")
+include_directories("lib/glad/include" "lib")
 target_link_libraries(vyvanse -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -g)

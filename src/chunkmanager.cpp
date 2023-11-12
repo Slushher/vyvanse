@@ -9,9 +9,9 @@ bool ChunkManager::isChunkOutOfRenderDistance(int chunkX, int chunkZ, int player
 
 void ChunkManager::UpdateLoadList(int playerX, int playerZ)
 {
-    for (int xOffset = -RENDER_DISTANCE; xOffset <= RENDER_DISTANCE; ++xOffset)
+    for (int xOffset = -RENDER_DISTANCE - PRELOAD_DISTANCE; xOffset <= RENDER_DISTANCE + PRELOAD_DISTANCE; ++xOffset)
     {
-        for (int zOffset = -RENDER_DISTANCE; zOffset <= RENDER_DISTANCE; ++zOffset)
+        for (int zOffset = -RENDER_DISTANCE - PRELOAD_DISTANCE; zOffset <= RENDER_DISTANCE + PRELOAD_DISTANCE; ++zOffset)
         {
             int chunkX = playerX + xOffset;
             int chunkZ = playerZ + zOffset;
@@ -86,9 +86,20 @@ void ChunkManager::UpdateVisibilityList(int playerX, int playerZ)
 
 void ChunkManager::renderChunks(Shader &shader)
 {
-    for (Chunk *chunk : chunkVector)
+    for (Chunk *chunk : visibleChunks)
     {
         chunk->Render(shader);
+    }
+    for (Chunk *chunk : visibleChunks)
+    {
+        chunk->RenderTransparent(shader);
+    }
+}
+
+void ChunkManager::renderEdges(Shader &shader){
+    for (Chunk *chunk : chunkVector)
+    {
+        chunk->RenderEdges(shader);
     }
 }
 

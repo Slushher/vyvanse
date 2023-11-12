@@ -1,5 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
@@ -20,14 +24,22 @@ const float SCR_HEIGHT = 720.f;
 // Debugging
 int success;
 char infoLog[512];
-bool isDebugged = false;
+bool freeCursor = false;
+bool debugging = false;
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+int fps = 0;
 
 // Lighting
 glm::vec3 lightPos(0.f, 6.0f, 0.f);
 
+// Shaders
+//std::vector<Shader> shaders;
+
 int chunkX = 0, chunkZ = 0;
 
-int image_load(const char image_path[]){
+int image_load(const char image_path[])
+{
     unsigned int texture;
     int image_w, image_h, image_channels;
     glGenTextures(1, &texture);
@@ -39,6 +51,10 @@ int image_load(const char image_path[]){
     // Image handling
     stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load(image_path, &image_w, &image_h, &image_channels, 0);
+    if (debugging)
+    {
+        printf("Loaded a image, path:%s, res:%ix%i, channels: %i\n", image_path, image_w, image_h, image_channels);
+    }
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_w, image_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -67,8 +83,9 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-    if(!isDebugged){
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //GLFW_CURSOR_DISABLED
+    if (!freeCursor)
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // GLFW_CURSOR_DISABLED
     }
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -79,23 +96,18 @@ int main()
         return -1;
     }
     glEnable(GL_DEPTH_TEST);
-    // Print OpenGL and GLSL version
-    printf("Version GL: %s\n", glGetString(GL_VERSION));
-    printf("Version GLSL: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-
+    if (debugging)
+    {
+        // Print OpenGL and GLSL version
+        printf("Version GL: %s\n", glGetString(GL_VERSION));
+        printf("Version GLSL: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    }
     // Build and compile shader programs
-    Shader shader("shaders/2.vs", "shaders/2.fs");
-    Shader water("shaders/water/water.vs", "shaders/water/water.fs");
-    // Vertex data
-    /*unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    Shader shader("shaders/1.vs", "shaders/1.fs");
+    Shader water_shader("shaders/water/water.vs", "shaders/water/water.fs");
+    Shader edges_shader("shaders/edges/edges.vs", "shaders/edges/edges.fs");
 
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    */
-    // Light VAO
+    //  Light VAO
     unsigned int lightVAO;
     glGenVertexArrays(1, &lightVAO);
     glBindVertexArray(lightVAO);
@@ -103,77 +115,49 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    unsigned int brick, grass;
+    unsigned int brick, grass, water;
     int image_w, image_h, image_channels;
-    brick = image_load("img/brick.png");
-    grass = image_load("img/grass.png");
-    /*
-    glGenTextures(1, &brick);
-    glBindTexture(GL_TEXTURE_2D, brick);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Image handling
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load("img/brick.png", &image_w, &image_h, &image_channels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_w, image_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "ERROR::TEXTURE::LOADING_FAILED\n";
-    }
-    stbi_image_free(data);
-    
-
-    glGenTextures(1, &grass);
-    glBindTexture(GL_TEXTURE_2D, grass);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Image handling
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load("img/grass.png", &image_w, &image_h, &image_channels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_w, image_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "ERROR::TEXTURE::LOADING_FAILED\n";
-    }
-    stbi_image_free(data);
-    */
-
+    brick = image_load("img/stone.png");
+    grass = image_load("img/dirt.png");
+    water = image_load("img/water.png");
     ChunkManager chunkmanager;
     chunkmanager.UpdateLoadList(chunkX, chunkZ);
     chunkmanager.UpdateVisibilityList(chunkX, chunkZ);
     chunkmanager.UpdateRebuildList();
     chunkmanager.RebuildChunks();
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
     while (!glfwWindowShouldClose(window))
     {
+        // fps counter
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        fps = 1 / deltaTime;
+
         // input
         processInput(window);
 
         // render
         glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         // draw
         shader.use();
         shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
         shader.setVec3("lightPos", cameraPos * glm::vec3(0.f, 10.f, 0.f));
         shader.setVec3("viewPos", cameraPos);
-        
-        const float radius = 10.0f;
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
 
         glm::mat4 view;
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -182,10 +166,14 @@ int main()
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
+        edges_shader.use();
+        edges_shader.setMat4("projection", projection);
+        edges_shader.setMat4("view", view);
         // chunk logic
-        if(chunkX!=static_cast<int>(cameraPos.x)/16 || chunkZ!=static_cast<int>(cameraPos.z)/16){
-            chunkX = static_cast<int>(cameraPos.x)/16;
-            chunkZ = static_cast<int>(cameraPos.z)/16;
+        if (chunkX != static_cast<int>(std::floor(cameraPos.x / 16.0f)) || chunkZ != static_cast<int>(std::floor(cameraPos.z / 16.0f)))
+        {
+            chunkX = static_cast<int>(std::floor(cameraPos.x / 16.0f));
+            chunkZ = static_cast<int>(std::floor(cameraPos.z / 16.0f));
             chunkmanager.UpdateLoadList(chunkX, chunkZ);
             chunkmanager.UpdateUnloadList(chunkX, chunkZ);
             chunkmanager.UpdateRebuildList();
@@ -193,12 +181,26 @@ int main()
             chunkmanager.RebuildChunks();
         }
         chunkmanager.renderChunks(shader);
+        //chunkmanager.renderEdges(edges_shader);
+        ImGui::Begin("ImGUI");
+        ImGui::Text("Player XYZ : %f, %f, %f", cameraPos.x, cameraPos.y, cameraPos.z);
+        ImGui::Text("Player direction : %f, %f, %f", direction.x, direction.y, direction.z);
+        ImGui::Text("Chunk XY : %i, %i", chunkX, chunkZ);
+        ImGui::Text("FPS : %i", fps);
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         // check and call events and swap the buffers
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
-    //glDeleteVertexArrays(1, &VAO);
-    //glDeleteBuffers(1, &VBO);
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwTerminate();
     return 0;
 }
@@ -207,4 +209,3 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
-

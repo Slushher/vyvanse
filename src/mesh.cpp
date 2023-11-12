@@ -74,7 +74,6 @@ void Mesh::Draw(Shader &shader)
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     //glDrawArrays(GL_TRIANGLES, 0, indices.size());
     glBindVertexArray(0);
-
     // Reset texture units to default
     glActiveTexture(GL_TEXTURE0);
 }
