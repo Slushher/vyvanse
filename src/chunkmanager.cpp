@@ -37,19 +37,6 @@ void ChunkManager::UpdateLoadList(int playerX, int playerZ)
     }
 }
 
-void ChunkManager::UpdateRebuildList()
-{
-    chunksToRebuild.clear();
-
-    for (Chunk *chunk : chunkVector)
-    {
-        if (chunk->needsRebuild())
-        {
-            chunksToRebuild.push_back(chunk);
-        }
-    }
-}
-
 void ChunkManager::UpdateUnloadList(int playerX, int playerZ)
 {
     auto it = std::remove_if(chunkVector.begin(), chunkVector.end(), [this, playerX, playerZ](Chunk *chunk)
@@ -71,8 +58,7 @@ void ChunkManager::UpdateVisibilityList(int playerX, int playerZ)
     for (Chunk *chunk : chunkVector)
     {
         // Update the chunk
-        chunk->Update(); // Assuming Chunk::Update() updates the visibility flag or any other relevant data
-
+        //chunk->Update(); // Assuming Chunk::Update() updates the visibility flag or any other relevant data
         int chunkX = chunk->getChunkX();
         int chunkZ = chunk->getChunkZ();
 
@@ -96,10 +82,24 @@ void ChunkManager::renderChunks(Shader &shader)
     }
 }
 
-void ChunkManager::renderEdges(Shader &shader){
+void ChunkManager::renderEdges(Shader &shader)
+{
     for (Chunk *chunk : chunkVector)
     {
         chunk->RenderEdges(shader);
+    }
+}
+
+void ChunkManager::UpdateRebuildList()
+{
+    chunksToRebuild.clear();
+
+    for (Chunk *chunk : chunkVector)
+    {
+        if (chunk->needsRebuild())
+        {
+            chunksToRebuild.push_back(chunk);
+        }
     }
 }
 
@@ -107,9 +107,59 @@ void ChunkManager::RebuildChunks()
 {
     for (Chunk *chunk : chunksToRebuild)
     {
-        chunk->createMesh();
+        std::vector<Chunk *> chunkNeighbors;
+        for (const chunkDirection &ch : CHUNK_DIRECTIONS)
+        {
+            const int neighborX = chunk->getChunkX() + ch.x;
+            const int neighborZ = chunk->getChunkZ() + ch.z;
+            if (getChunk(neighborX, neighborZ))
+            {
+
+                auto neighborIt = std::find_if(chunkVector.begin(), chunkVector.end(),
+                                               [neighborX, neighborZ](Chunk *neighbor)
+                                               {
+                                                   return neighbor->getChunkX() == neighborX && neighbor->getChunkZ() == neighborZ;
+                                               });
+
+                if (neighborIt != chunkVector.end())
+                {
+                    chunkNeighbors.push_back(*neighborIt);
+                }
+            }
+        }
+        chunk->createMesh(chunkNeighbors);
         chunk->setNeedsRebuild(false);
     }
 
     chunksToRebuild.clear();
+}
+
+chunkDirection ChunkManager::getChunkDirection(const chunkDirection& face)
+{
+    for (const auto& dir : CHUNK_DIRECTIONS)
+    {
+        if (dir.x == face.x && dir.z == face.z)
+        {
+            return dir;
+        }
+    }
+    // If no match is found, return a default direction (you may want to handle this differently)
+    return {0, 0};
+}
+
+
+bool ChunkManager::isWithinBounds(int x, int z)
+{
+    // return x >= 0 && x < RENDER_DISTANCE && z >= 0 && z < Chunk::CHUNK_SIZE;
+}
+
+Chunk* ChunkManager::getChunk(int x, int z) {
+    for (Chunk *chunk : chunkVector) {
+        if (chunk->getChunkX() == x && chunk->getChunkZ() == z) {
+            return chunk;
+        }
+    }
+
+    // If no matching chunk is found
+    return nullptr;
 }

@@ -24,7 +24,7 @@ const float SCR_HEIGHT = 720.f;
 // Debugging
 int success;
 char infoLog[512];
-bool freeCursor = false;
+bool freeCursor = true;
 bool debugging = false;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;

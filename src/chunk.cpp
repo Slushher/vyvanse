@@ -6,7 +6,7 @@ Chunk::Chunk(int x, int z)
 {
     const siv::PerlinNoise::seed_type seed = 1234u;
     const siv::PerlinNoise perlin{seed};
-    double perlin_multiplier = 0.05;
+    double perlin_multiplier = 0.04;
     this->chunkX = x;
     this->chunkZ = z;
     this->chunkVisible = true;
@@ -28,20 +28,23 @@ Chunk::Chunk(int x, int z)
                     }
                     else
                     {
-                        // printf("Grass at [%i %i %i]\n",i,j,k);
                         m_pBlocks[i][j][k].setBlockType(Grass);
                     }
                 }
                 else
                 {
-                    if (j > 12)
-                    {
-                        m_pBlocks[i][j][k].setBlockType(Air);
-                    }
-                    else
-                    {
-                        m_pBlocks[i][j][k].setBlockType(Water);
-                    }
+                    m_pBlocks[i][j][k].setBlockType(Air);
+                }
+            }
+        }
+    }
+    for (int i = 0; i < CHUNK_SIZE; i++)
+    {
+        for (int j = 12; j >= 0; j--)
+        {
+            for (int k = 0; k < CHUNK_SIZE; k++){
+                if(!m_pBlocks[i][j][k].getBlockType()){
+                    m_pBlocks[i][j][k].setBlockType(Water);
                 }
             }
         }
@@ -63,47 +66,51 @@ Chunk::~Chunk()
     delete[] m_pBlocks;
 }
 
-bool Chunk::isBlockSurrounded(int x, int y, int z)
+bool Chunk::isBlockExposedToAir(int x, int y, int z, Direction face, std::vector<Chunk *> chunkNeighbors)
 {
-    for (int dx = -1; dx <= 1; ++dx)
+    int nx = x + face.x;
+    int ny = y + face.y;
+    int nz = z + face.z;
+
+    if (nx >= 0 && nx < CHUNK_SIZE &&
+        ny >= 0 && ny < CHUNK_HEIGHT &&
+        nz >= 0 && nz < CHUNK_SIZE)
     {
-        for (int dy = -1; dy <= 1; ++dy)
+        if (m_pBlocks[nx][ny][nz].getBlockType() == Water && m_pBlocks[x][y][z].getBlockType() != Water)
         {
-            for (int dz = -1; dz <= 1; ++dz)
+            return true;
+        }
+        else if (m_pBlocks[nx][ny][nz].getBlockType() == Air)
+        {
+            return true;
+        }
+    }
+    for (Chunk *neighbor : chunkNeighbors)
+    {
+        int neighborX = x + face.x;
+        int neighborY = y + face.y;
+        int neighborZ = z + face.z;
+
+        if (neighborX >= 0 && neighborX < CHUNK_SIZE &&
+            neighborY >= 0 && neighborY < CHUNK_HEIGHT &&
+            neighborZ >= 0 && neighborZ < CHUNK_SIZE)
+        {
+            if (neighbor->m_pBlocks[neighborX][neighborY][neighborZ].getBlockType() == Water && m_pBlocks[x][y][z].getBlockType() != Water)
             {
-                int nx = x + dx;
-                int ny = y + dy;
-                int nz = z + dz;
-
-                // Skip the center block
-                if (dx == 0 && dy == 0 && dz == 0)
-                {
-                    continue;
-                }
-
-                // Check if the neighboring block is within chunk bounds
-                if (nx >= 0 && nx < CHUNK_SIZE &&
-                    ny >= 0 && ny < CHUNK_HEIGHT &&
-                    nz >= 0 && nz < CHUNK_SIZE)
-                {
-                    // Check if the neighboring block is empty or not obstructing
-                    if (m_pBlocks[nx][ny][nz].getBlockType() != Air)
-                    {
-                        // Neighboring block is not empty, target block is not surrounded
-                        return false;
-                    }
-                }
-                // If neighboring block is outside the chunk, consider it surrounded
+                return true;
+            }
+            else if (neighbor->m_pBlocks[neighborX][neighborY][neighborZ].getBlockType() == Air)
+            {
+                return true;
             }
         }
     }
-    // All surrounding blocks are either empty or within the chunk, target block is surrounded
-    return true;
+    return false;
 }
 
 void Chunk::Update()
 {
-    for (int x = 0; x < CHUNK_SIZE; x++)
+    /*for (int x = 0; x < CHUNK_SIZE; x++)
     {
         for (int y = 0; y < CHUNK_HEIGHT; y++)
         {
@@ -119,7 +126,7 @@ void Chunk::Update()
                 }
             }
         }
-    }
+    }*/
 }
 void Chunk::Render(Shader &shader)
 {
@@ -140,7 +147,7 @@ void Chunk::Render(Shader &shader)
         shader.setInt("texture1", i);
         shader.setFloat("transparency", 1.0f);
         meshes[i].Draw(shader);
-        glDisable(GL_BLEND);
+        //glDisable(GL_BLEND);
     }
 }
 
@@ -161,7 +168,6 @@ void Chunk::RenderTransparent(Shader &shader)
 
         shader.setMat4("model", model);
         shader.setInt("texture1", i);
-        // printf("Now drawing water\n");
         shader.setFloat("transparency", 0.3f);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -172,13 +178,12 @@ void Chunk::RenderTransparent(Shader &shader)
 
 void Chunk::RenderEdges(Shader &shader)
 {
-    shader.use();
+    /*shader.use();
     glm::mat4 model = glm::mat4(1.0f);
 
-    // Calculate translation for each cube based on its position in the chunk
-    int x = 0; // Choose a specific edge, e.g., the front edge
-    int y = 0;
-    int z = 0;
+    float x = 0.f;
+    float y = 0.f;
+    float z = 0.f;
 
     glm::vec3 blockTranslate = glm::vec3(x + chunkX * CHUNK_SIZE, y, z + chunkZ * CHUNK_SIZE);
     model = glm::translate(model, blockTranslate);
@@ -221,15 +226,15 @@ void Chunk::RenderEdges(Shader &shader)
     shader.setVec3("lineColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
     // Reset other OpenGL states
-    glBindVertexArray(0);
+    glBindVertexArray(0);*/
 }
 
-void Chunk::createMesh()
+void Chunk::createMesh(std::vector<Chunk *> chunkNeighbors)
 {
     meshes.clear();
     std::vector<Vertex> p_blockMesh_vertices;
     std::vector<unsigned int> cubeIndices;
-    for (int block_type = 1; block_type <= Water; block_type++)
+    for (int block_type = Brick; block_type <= Water; block_type++)
     {
         p_blockMesh_vertices.clear();
         cubeIndices.clear();
@@ -244,26 +249,33 @@ void Chunk::createMesh()
                     {
                         // Calculate the translation for the current block within the chunk
                         glm::vec3 blockTranslate = glm::vec3(x, y, z);
-
-                        // Apply translation to vertices
-                        for (size_t i = 0; i < 36; ++i)
+                        int iterator = 0;
+                        for (const Direction &face : ALL_DIRECTIONS)
                         {
-                            Vertex vertex;
-                            vertex.Position = glm::vec3(cubeVertices[i * 8], cubeVertices[i * 8 + 1], cubeVertices[i * 8 + 2]) + blockTranslate;
-                            vertex.Normal = glm::vec3(cubeVertices[i * 8 + 3], cubeVertices[i * 8 + 4], cubeVertices[i * 8 + 5]);
-                            vertex.TexCoords = glm::vec2(cubeVertices[i * 8 + 6], cubeVertices[i * 8 + 7]);
-                            p_blockMesh_vertices.push_back(vertex);
-                        }
-                        // Adjust indices for the current block
-                        for (size_t i = 0; i < 36; ++i)
-                        {
-                            cubeIndices.push_back(i + p_blockMesh_vertices.size() - 36);
+                            if (isBlockExposedToAir(x, y, z, face, chunkNeighbors))
+                            {
+                                // Apply translation to vertices
+                                for (size_t i = 0; i < 6; ++i)
+                                {
+                                    Vertex vertex;
+                                    size_t baseIndex = (iterator * 6 + i) * 8;
+                                    vertex.Position = glm::vec3(cubeVertices[baseIndex], cubeVertices[baseIndex + 1], cubeVertices[baseIndex + 2]) + blockTranslate;
+                                    vertex.Normal = glm::vec3(cubeVertices[baseIndex + 3], cubeVertices[baseIndex + 4], cubeVertices[baseIndex + 5]);
+                                    vertex.TexCoords = glm::vec2(cubeVertices[baseIndex + 6], cubeVertices[baseIndex + 7]);
+                                    p_blockMesh_vertices.push_back(vertex);
+                                }
+                                // Adjust indices for the current block
+                                for (size_t i = 0; i < 6; ++i)
+                                {
+                                    cubeIndices.push_back(i + p_blockMesh_vertices.size() - 6);
+                                }
+                            }
+                            iterator++;
                         }
                     }
                 }
             }
         }
-
         Mesh mesh(p_blockMesh_vertices, cubeIndices, m_pTextures);
         meshes.push_back(mesh);
     }
