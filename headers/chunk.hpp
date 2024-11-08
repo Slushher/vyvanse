@@ -48,4 +48,7 @@ public:
     int getChunkZ();
     bool needsRebuild();
     void setNeedsRebuild(bool rebuild);
+    BlockType getBlockType(int x, int y, int z) const;
+    void setBlockType(int x, int y, int z, BlockType blockType);
+    bool isValidBlockPosition(int x, int y, int z) const;
 };

@@ -42,8 +42,10 @@ Chunk::Chunk(int x, int z)
     {
         for (int j = 12; j >= 0; j--)
         {
-            for (int k = 0; k < CHUNK_SIZE; k++){
-                if(!m_pBlocks[i][j][k].getBlockType()){
+            for (int k = 0; k < CHUNK_SIZE; k++)
+            {
+                if (!m_pBlocks[i][j][k].getBlockType())
+                {
                     m_pBlocks[i][j][k].setBlockType(Water);
                 }
             }
@@ -147,7 +149,7 @@ void Chunk::Render(Shader &shader)
         shader.setInt("texture1", i);
         shader.setFloat("transparency", 1.0f);
         meshes[i].Draw(shader);
-        //glDisable(GL_BLEND);
+        // glDisable(GL_BLEND);
     }
 }
 
@@ -300,6 +302,28 @@ bool Chunk::needsRebuild()
 void Chunk::setNeedsRebuild(bool rebuild)
 {
     this->rebuild = rebuild;
+}
+
+bool Chunk::isValidBlockPosition(int x, int y, int z) const
+{
+    return x >= 0 && x < CHUNK_SIZE && y >= 0 && y < CHUNK_HEIGHT && z >= 0 && z < CHUNK_SIZE;
+}
+
+void Chunk::setBlockType(int x, int y, int z, BlockType blockType)
+{
+    if (isValidBlockPosition(x, y, z))
+    {
+        m_pBlocks[x][y][z].setBlockType(blockType);
+    }
+}
+
+BlockType Chunk::getBlockType(int x, int y, int z) const
+{
+    if (isValidBlockPosition(x, y, z))
+    {
+        return m_pBlocks[x][y][z].getBlockType();
+    }
+    return Air;
 }
 
 /*Chunk* Chunk::getNeighboringChunk(int x, int y, int z, int offsetX, int offsetY, int offsetZ)

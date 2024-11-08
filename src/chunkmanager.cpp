@@ -58,7 +58,7 @@ void ChunkManager::UpdateVisibilityList(int playerX, int playerZ)
     for (Chunk *chunk : chunkVector)
     {
         // Update the chunk
-        //chunk->Update(); // Assuming Chunk::Update() updates the visibility flag or any other relevant data
+        // chunk->Update(); // Assuming Chunk::Update() updates the visibility flag or any other relevant data
         int chunkX = chunk->getChunkX();
         int chunkZ = chunk->getChunkZ();
 
@@ -134,9 +134,9 @@ void ChunkManager::RebuildChunks()
     chunksToRebuild.clear();
 }
 
-chunkDirection ChunkManager::getChunkDirection(const chunkDirection& face)
+chunkDirection ChunkManager::getChunkDirection(const chunkDirection &face)
 {
-    for (const auto& dir : CHUNK_DIRECTIONS)
+    for (const auto &dir : CHUNK_DIRECTIONS)
     {
         if (dir.x == face.x && dir.z == face.z)
         {
@@ -147,15 +147,18 @@ chunkDirection ChunkManager::getChunkDirection(const chunkDirection& face)
     return {0, 0};
 }
 
-
 bool ChunkManager::isWithinBounds(int x, int z)
 {
+    return true;
     // return x >= 0 && x < RENDER_DISTANCE && z >= 0 && z < Chunk::CHUNK_SIZE;
 }
 
-Chunk* ChunkManager::getChunk(int x, int z) {
-    for (Chunk *chunk : chunkVector) {
-        if (chunk->getChunkX() == x && chunk->getChunkZ() == z) {
+Chunk *ChunkManager::getChunk(int x, int z)
+{
+    for (Chunk *chunk : chunkVector)
+    {
+        if (chunk->getChunkX() == x && chunk->getChunkZ() == z)
+        {
             return chunk;
         }
     }

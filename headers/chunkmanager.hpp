@@ -4,11 +4,6 @@
 #include <chunk.hpp>
 #include <algorithm>
 
-/*struct chunkDirection
-{
-    int x, z;
-};*/
-
 const chunkDirection CHUNK_LEFT = {-1, 0};
 const chunkDirection CHUNK_RIGHT = {1, 0};
 const chunkDirection CHUNK_FORWARD = {0, 1};
@@ -18,7 +13,6 @@ class ChunkManager{
     std::vector<Chunk*> chunkVector;
     std::vector<Chunk*> chunksToRebuild;
     std::vector<Chunk*> visibleChunks;
-    //std::vector<Chunk*> chunkNeighbors;
 public:
     const std::vector<chunkDirection> CHUNK_DIRECTIONS = {CHUNK_LEFT, CHUNK_RIGHT, CHUNK_FORWARD, CHUNK_BACKWARD};
     const int RENDER_DISTANCE = 4;

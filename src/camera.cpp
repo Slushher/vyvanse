@@ -46,6 +46,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(direction);
+
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
@@ -62,7 +63,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
         cameraSpeed = 1.0f;
 }
 
-void processInput(GLFWwindow *window)
+void processInput(GLFWwindow *window, ChunkManager &chunkmanager, Player &player)
 {
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -88,5 +89,9 @@ void processInput(GLFWwindow *window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        player.destroyBlock(chunkmanager);
+        printf("I destroyed yo mama!\n");
+    }
     // std::cout<<"Player X:"<<cameraPos.x<<" Z:"<<cameraPos.z<<" \n";
 }

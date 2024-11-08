@@ -16,6 +16,8 @@
 #include <chunk.hpp>
 #include <chunkmanager.hpp>
 #include <thread>
+#include <player.hpp>
+//#include <hud.hpp>
 
 // Definitions
 const float SCR_WIDTH = 1280.f;
@@ -24,7 +26,7 @@ const float SCR_HEIGHT = 720.f;
 // Debugging
 int success;
 char infoLog[512];
-bool freeCursor = true;
+bool freeCursor = false;
 bool debugging = false;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -75,6 +77,10 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    //glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
+    glfwWindowHint(GLFW_REFRESH_RATE, 144);
+    GLFWmonitor* primary = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(primary);
     GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "_floating_ Project", NULL, NULL);
     if (window == NULL)
     {
@@ -89,7 +95,6 @@ int main()
     }
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-    glfwSetWindowPos(window, 360, 260);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -102,9 +107,7 @@ int main()
         printf("Version GL: %s\n", glGetString(GL_VERSION));
         printf("Version GLSL: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
-    // Build and compile shader programs
-    Shader shader("shaders/1.vs", "shaders/1.fs");
-    Shader water_shader("shaders/water/water.vs", "shaders/water/water.fs");
+    // Build and cowhileader("shaders/water/water.vs", "shaders/water/water.fs");
     Shader edges_shader("shaders/edges/edges.vs", "shaders/edges/edges.fs");
 
     //  Light VAO
@@ -125,6 +128,7 @@ int main()
     chunkmanager.UpdateVisibilityList(chunkX, chunkZ);
     chunkmanager.UpdateRebuildList();
     chunkmanager.RebuildChunks();
+    Player player;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -133,7 +137,6 @@ int main()
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-
     while (!glfwWindowShouldClose(window))
     {
         // fps counter
@@ -143,7 +146,7 @@ int main()
         fps = 1 / deltaTime;
 
         // input
-        processInput(window);
+        processInput(window, chunkmanager, player);
 
         // render
         glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
@@ -154,6 +157,7 @@ int main()
         ImGui::NewFrame();
 
         // draw
+        Shader shader("shaders/1.vs", "shaders/1.fs");
         shader.use();
         shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
         shader.setVec3("lightPos", cameraPos * glm::vec3(0.f, 10.f, 0.f));
