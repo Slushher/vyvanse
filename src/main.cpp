@@ -17,6 +17,8 @@
 #include <chunkmanager.hpp>
 #include <thread>
 #include <player.hpp>
+#include <texture.hpp>
+#include <sprite.hpp>
 //#include <hud.hpp>
 
 // Definitions
@@ -107,6 +109,14 @@ int main()
         printf("Version GL: %s\n", glGetString(GL_VERSION));
         printf("Version GLSL: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
+    
+    /*GLuint texture = LoadTexture("img/brick.png");
+
+    if (texture == 0) {
+        std::cerr << "Texture loading failed!" << std::endl;
+        return -1;
+    }*/
+
     // Build and cowhileader("shaders/water/water.vs", "shaders/water/water.fs");
     Shader edges_shader("shaders/edges/edges.vs", "shaders/edges/edges.fs");
 
@@ -123,6 +133,8 @@ int main()
     brick = image_load("img/stone.png");
     grass = image_load("img/dirt.png");
     water = image_load("img/water.png");
+
+    unsigned int dirt = image_load("img/grass.png");
     ChunkManager chunkmanager;
     chunkmanager.UpdateLoadList(chunkX, chunkZ);
     chunkmanager.UpdateVisibilityList(chunkX, chunkZ);
@@ -147,7 +159,6 @@ int main()
 
         // input
         processInput(window, chunkmanager, player);
-
         // render
         glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -185,6 +196,7 @@ int main()
             chunkmanager.RebuildChunks();
         }
         chunkmanager.renderChunks(shader);
+        DrawSprite(dirt, -0.5f, -0.5f);
         //chunkmanager.renderEdges(edges_shader);
         ImGui::Begin("ImGUI");
         ImGui::Text("Player XYZ : %f, %f, %f", cameraPos.x, cameraPos.y, cameraPos.z);
